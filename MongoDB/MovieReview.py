@@ -22,14 +22,20 @@ log_handler = logging.FileHandler('./movie_review.log')
 log_handler.setFormatter(formatter)
 logger.addHandler(log_handler)
 
-# 가상 브라우저 실행
-browser = webdriver.Chrome('./chromedriver.exe')
-logger.info('가상 브라우저 실행...')
+# 가상 브라우저 실행(헤드리스 모드)
+options = webdriver.ChromeOptions()
+options.add_argument('--headless')
+options.add_argument('--no-sandbox')
+options.add_argument('--disable-dev-shm-usage')
+options.add_argument("user-agent=Mozilla/5.0 (Macintosh; Intel Mac OS X 10_12_6)")
 
-rank = 50
+rank = 1
 page = 1
 
 while True:
+    browser = webdriver.Chrome('./chromedriver.exe', options=options)
+    logger.info('가상 브라우저 실행...')
+
     # 네이버 영화 랭킹 이동
     browser.get('https://movie.naver.com/movie/sdb/rank/rmovie.naver?sel=pnt&page=%d' % page)
     logger.info('네이버 영화 랭킹 {}페이지 이동...'.format(page))
@@ -61,10 +67,10 @@ while True:
             score = li.find_element(By.CSS_SELECTOR, '.star_score > em').text
             reple = li.find_element(By.CSS_SELECTOR, '.score_reple > p > span:last-child').text
 
-            #print('{},{},{},{}'.format(count, title, reple, score))
+            print('{},{},{},{}'.format(count, title, reple, score))
 
             # MongoDB로 Insert
-            collection.insert_one({'count':count, 'title':title, 'reple':reple, 'score':score})
+            #collection.insert_one({'count':count, 'title':title, 'reple':reple, 'score':score})
             logger.info('{},{}'.format(count, title))
             count += 1
 
@@ -75,6 +81,8 @@ while True:
             logger.info('다음 페이지 클릭...')
         except:
             logger.error('{} 수집완료...'.format(title))
+            #browser.close()
+            browser.quit()
             break
 
 
